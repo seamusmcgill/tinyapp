@@ -13,6 +13,18 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const generateRandomString = () => {
+  // Create a string with all alphanumeric characters
+  const characters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  let randomString = "";
+  for (let i = 0; i < 6; i++) {
+    // Generate a random number between 0 and the number of alphanumeric characters
+    let randomNumber = Math.floor(Math.random() * characters.length);
+    randomString += characters[randomNumber];
+  }
+  return randomString;
+};
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -32,6 +44,11 @@ app.get("/urls", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
+});
+
+app.post("/urls", (req, res) => {
+  console.log(req.body);
+  res.send("OK");
 });
 
 app.get("/urls/:shortURL", (req, res) => {

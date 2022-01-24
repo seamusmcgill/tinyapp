@@ -14,7 +14,7 @@ const urlDatabase = {
 };
 
 const generateRandomString = () => {
-  // Create a string with all alphanumeric characters
+  // Create a string with all alphanumeric characters and an empty string
   const characters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
   let randomString = "";
   for (let i = 0; i < 6; i++) {
@@ -25,18 +25,6 @@ const generateRandomString = () => {
   return randomString;
 };
 
-app.get("/", (req, res) => {
-  res.send("Hello!");
-});
-
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World!</b></body></html>\n");
-});
-
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
@@ -46,8 +34,9 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
+// On form submission
 app.post("/urls", (req, res) => {
-  console.log(req.body);
+  // Create a random short URL and add it to the URL database then redirect to its shortURL page
   let shortURL = generateRandomString();
   urlDatabase[shortURL] = req.body.longURL;
   res.redirect(`/urls/${shortURL}`);
@@ -58,6 +47,7 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+// Redirect the shortURL to the page the longURL refers to
 app.get("/u/:shortURL", (req, res) => {
   const templateVars = { shortURL: req.params.shortURL, longURL : urlDatabase[req.params.shortURL]};
   res.redirect(templateVars.longURL);

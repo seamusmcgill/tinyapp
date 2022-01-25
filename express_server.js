@@ -25,6 +25,10 @@ const generateRandomString = () => {
   return randomString;
 };
 
+app.get("/", (req, res) => {
+  res.redirect("/urls");
+});
+
 // Render the front page and the form to shorten new URLs
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase };

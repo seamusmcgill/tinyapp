@@ -39,6 +39,10 @@ app.get("/urls/new", (req, res) => {
 app.post("/urls", (req, res) => {
   // Create a random short URL and add it to the URL database then redirect to its shortURL page
   let shortURL = generateRandomString();
+  let longURL = req.body.longURL;
+  if (!longURL.includes("://")) {
+    longURL = `http://${longURL}`;
+  }
   urlDatabase[shortURL] = req.body.longURL;
   res.redirect(`/urls/${shortURL}`);
 });

@@ -25,6 +25,7 @@ const generateRandomString = () => {
   return randomString;
 };
 
+// Render the front page and the form to shorten new URLs
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
@@ -42,6 +43,7 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
+// Render the page for the individual shortended URL with its longURL counterpart
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { shortURL: req.params.shortURL, longURL : urlDatabase[req.params.shortURL]};
   res.render("urls_show", templateVars);

@@ -39,11 +39,12 @@ app.get("/urls/new", (req, res) => {
 app.post("/urls", (req, res) => {
   // Create a random short URL and add it to the URL database then redirect to its shortURL page
   let shortURL = generateRandomString();
+  // Correct if user doesn't enter http:// in input
   let longURL = req.body.longURL;
   if (!longURL.includes("://")) {
     longURL = `http://${longURL}`;
   }
-  urlDatabase[shortURL] = req.body.longURL;
+  urlDatabase[shortURL] = longURL;
   res.redirect(`/urls/${shortURL}`);
 });
 
@@ -53,6 +54,18 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+app.post("/urls/:shortURL", (req, res) => {
+  // Correct if user doesn't enter http://
+  let newLongURL = req.body.updatedLongURL;
+  if (!newLongURL.includes("://")) {
+    newLongURL = `http://${newLongURL}`;
+  }
+  // Update the database with new lnog URL and redirect to URLs page
+  urlDatabase[req.params.shortURL] = newLongURL;
+  res.redirect("/urls");
+});
+
+// Delete shortened URL from homepage
 app.post("/urls/:shortURL/delete", (req, res) => {
   delete urlDatabase[req.params.shortURL];
   res.redirect("/urls");

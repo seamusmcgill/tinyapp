@@ -27,6 +27,7 @@ const generateRandomString = () => {
   return randomString;
 };
 
+// Redirect from / to URLs page
 app.get("/", (req, res) => {
   res.redirect("/urls");
 });
@@ -46,7 +47,7 @@ app.get("/urls/new", (req, res) => {
 app.post("/urls", (req, res) => {
   // Create a random short URL and add it to the URL database then redirect to its shortURL page
   let shortURL = generateRandomString();
-  // Correct if user doesn't enter http:// in input
+  // Correct the input if user doesn't enter http://
   let longURL = req.body.longURL;
   if (!longURL.includes("://")) {
     longURL = `http://${longURL}`;
@@ -55,14 +56,14 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
-// Render the page for the individual shortended URL with its longURL counterpart
+// Render the page for the individual shortened URL with its longURL counterpart
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { shortURL: req.params.shortURL, longURL : urlDatabase[req.params.shortURL], username: req.cookies["username"]};
   res.render("urls_show", templateVars);
 });
 
 app.post("/urls/:shortURL", (req, res) => {
-  // Correct if user doesn't enter http://
+  // Correct the input if user doesn't enter http://
   let newLongURL = req.body.updatedLongURL;
   if (!newLongURL.includes("://")) {
     newLongURL = `http://${newLongURL}`;
@@ -84,8 +85,14 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(templateVars.longURL);
 });
 
+// Store login username in cookies and redirect to urls homepage
 app.post("/login", (req, res) => {
   res.cookie("username", req.body.username);
+  res.redirect("/urls");
+});
+
+app.post("/logout", (req, res) => {
+  res.clearCookie("username");
   res.redirect("/urls");
 });
 

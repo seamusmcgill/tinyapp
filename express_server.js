@@ -128,7 +128,7 @@ app.get("/login", (req, res) => {
   res.render("login", templateVars);
 });
 
-// Store login username in cookies and redirect to urls homepage
+// Check login information, update cookie and redirect to urls homepage
 app.post("/login", (req, res) => {
   // If no email or password were entered or email has already been registered send a 400 error
   if (!req.body.email || !req.body.password) {

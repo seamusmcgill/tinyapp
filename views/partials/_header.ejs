@@ -10,11 +10,16 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
     </div>
+    <!-- TO FIX: MAKE THESE COLLAPSIBLE -->
     <% if (!user) { %>
-      <form class="form-inline form-inline-sm" style="align-self:flex-end" action="/login" method="POST">
-        <div class="form-group mb-2">
-          <input class="form-control" type="text" name="username" placeholder="Username" style="width: 300px; margin-right: 1em">
+      <form class="form-inline form-inline-sm" style="align-self:flex-end" action="/login" method="GET">
+        <div class="form-group mb-2 mr-2">
           <button type="submit" class="btn btn-outline-light">Login</button>
+        </div>
+      </form>
+      <form class="form-inline form-inline-sm" style="align-self:flex-end" action="/register" method="GET">
+        <div class="form-group mb-2">
+          <button type="submit" class="btn btn-primary">Register</button>
         </div>
       </form>
     <% } else { %>

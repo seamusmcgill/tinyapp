@@ -11,8 +11,14 @@ const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": {
+    longURL: "http://www.lighthouselabs.ca",
+    userID: "",
+  },
+  "9sm5xK": {
+    longURL: "http://www.google.com",
+    userID: "",
+  },
 };
 
 const users = {};
@@ -70,13 +76,17 @@ app.post("/urls", (req, res) => {
   if (!longURL.includes("://")) {
     longURL = `http://${longURL}`;
   }
-  urlDatabase[shortURL] = longURL;
+  urlDatabase[shortURL] = {
+    longURL,
+    userID: req.cookies["user_id"],
+  };
+  console.log(urlDatabase);
   res.redirect(`/urls/${shortURL}`);
 });
 
 // Render the page for the individual shortened URL with its longURL counterpart
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL : urlDatabase[req.params.shortURL], user: users[req.cookies["user_id"]] };
+  const templateVars = { shortURL: req.params.shortURL, longURL : urlDatabase[req.params.shortURL].longURL, user: users[req.cookies["user_id"]] };
   res.render("urls_show", templateVars);
 });
 
@@ -87,7 +97,7 @@ app.post("/urls/:shortURL", (req, res) => {
     newLongURL = `http://${newLongURL}`;
   }
   // Update the database with new lnog URL and redirect to URLs page
-  urlDatabase[req.params.shortURL] = newLongURL;
+  urlDatabase[req.params.shortURL].longURL = newLongURL;
   res.redirect("/urls");
 });
 
@@ -99,7 +109,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 // Redirect the shortURL to the page the longURL refers to
 app.get("/u/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL : urlDatabase[req.params.shortURL]};
+  const templateVars = { shortURL: req.params.shortURL, longURL : urlDatabase[req.params.shortURL].longURL};
   res.redirect(templateVars.longURL);
 });
 

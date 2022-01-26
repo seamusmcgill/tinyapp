@@ -36,12 +36,12 @@ app.get("/", (req, res) => {
 
 // Render the front page and the form to shorten new URLs
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase, username: req.cookies["username"] };
+  const templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]] };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  const templateVars = { username: req.cookies["username"] };
+  const templateVars = { user: users[req.cookies["user_id"]] };
   res.render("urls_new", templateVars);
 });
 
@@ -60,7 +60,7 @@ app.post("/urls", (req, res) => {
 
 // Render the page for the individual shortened URL with its longURL counterpart
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL : urlDatabase[req.params.shortURL], username: req.cookies["username"]};
+  const templateVars = { shortURL: req.params.shortURL, longURL : urlDatabase[req.params.shortURL], user: users[req.cookies["user_id"]] };
   res.render("urls_show", templateVars);
 });
 
@@ -89,7 +89,7 @@ app.get("/u/:shortURL", (req, res) => {
 
 // Render the registration page
 app.get("/register", (req, res) => {
-  const templateVars = { username: req.cookies["username"] };
+  const templateVars = { user: users[req.cookies["user_id"]] };
   res.render("register_user", templateVars);
 });
 
@@ -113,7 +113,7 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect("/urls");
 });
 

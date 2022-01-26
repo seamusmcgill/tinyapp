@@ -67,7 +67,7 @@ app.get("/", (req, res) => {
 // Render the front page and the form to shorten new URLs
 app.get("/urls", (req, res) => {
   if (!req.cookies["user_id"]) {
-    return res.status(403).send("Log in to view shortened URLs");
+    return res.status(403).send("403 FORDBIDDEN - Log in to view shortened URLs.");
   }
   let userID = req.cookies["user_id"];
   const templateVars = { urls: getUserURLs(userID), user: users[userID] };
@@ -85,7 +85,7 @@ app.get("/urls/new", (req, res) => {
 // On form submission
 app.post("/urls", (req, res) => {
   if (!req.cookies["user_id"]) {
-    return res.status(403).send("Only logged in users can create a shortened URL.");
+    return res.status(403).send("403 FORBIDDEN - Only logged in users can create a shortened URL.");
   }
   // Create a random short URL and add it to the URL database then redirect to its shortURL page
   let shortURL = generateRandomString();
@@ -104,9 +104,13 @@ app.post("/urls", (req, res) => {
 
 // Render the page for the individual shortened URL with its longURL counterpart
 app.get("/urls/:shortURL", (req, res) => {
-  // Don't allow anonymous users to edit shortURLs
+  // Don't allow anonymous users to edit shortURLs or users to access short URLs that aren't theirs
   if (!req.cookies["user_id"]) {
-    res.redirect("/login");
+    return res.status(403).send("403 FORBIDDEN - Must be logged in to access short URL page.");
+  }
+  let userURLs = getUserURLs(req.cookies["user_id"]);
+  if (!Object.keys(userURLs).includes(req.params.shortURL)) {
+    return res.status(403).send("403 FORBIDDEN - You can only edit short URLs that you have made.");
   }
   const templateVars = { shortURL: req.params.shortURL, longURL : urlDatabase[req.params.shortURL].longURL, user: users[req.cookies["user_id"]] };
   res.render("urls_show", templateVars);
@@ -133,7 +137,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 app.get("/u/:shortURL", (req, res) => {
   // Send error if invalid shortURL
   if (!urlDatabase[req.params.shortURL]) {
-    return res.status(404).send("Invalid short URL");
+    return res.status(404).send("404 NOT FOUND - Invalid short URL");
   }
   const templateVars = { shortURL: req.params.shortURL, longURL : urlDatabase[req.params.shortURL].longURL};
   res.redirect(templateVars.longURL);
@@ -149,10 +153,10 @@ app.get("/register", (req, res) => {
 app.post("/register", (req, res) => {
   // If no email or password were entered or email has already been registered send a 400 error
   if (!req.body.email || !req.body.password) {
-    return res.status(400).send("Enter email and password");
+    return res.status(400).send("400 BAD REQUEST - Enter email and password.");
   }
   if (findUserEmail(req.body.email)) {
-    return res.status(400).send("Email already in user database");
+    return res.status(400).send("400 BAD REQUEST - Email already in user database.");
   }
   let userID = generateRandomString();
   users[userID] = {
@@ -174,15 +178,15 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
   // If no email or password were entered or email has already been registered send a 400 error
   if (!req.body.email || !req.body.password) {
-    return res.status(400).send("Enter email and password");
+    return res.status(400).send("400 BAD REQUEST - Enter email and password");
   }
   // Check if entered email and password are valid
   if (!findUserEmail(req.body.email)) {
-    return res.status(403).send("Email not found in user database");
+    return res.status(403).send("403 FORBIDDEN - Email not found in user database.");
   }
   let userID = findUserEmail(req.body.email);
   if (req.body.password !== users[userID].password) {
-    return res.status(403).send("Incorrect password");
+    return res.status(403).send("403 FORBIDDEN - Incorrect password.");
   }
   // Set cookie to user ID that matches email and password and redirect to URLs
   res.cookie("user_id", userID);

@@ -45,6 +45,17 @@ const findUserEmail = (email) => {
   return false;
 };
 
+// Return an object containing the URLs from the database that belong to the user
+const getUserURLs = (id) => {
+  let userURLs = {};
+  for (const url in urlDatabase) {
+    if (id === urlDatabase[url].userID) {
+      userURLs[url] = urlDatabase[url];
+    }
+  }
+  return userURLs;
+};
+
 // Redirect from / to login/URLs page
 app.get("/", (req, res) => {
   if (!req.cookies["user_id"]) {
@@ -58,7 +69,8 @@ app.get("/urls", (req, res) => {
   if (!req.cookies["user_id"]) {
     return res.status(403).send("Log in to view shortened URLs");
   }
-  const templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]] };
+  let userID = req.cookies["user_id"];
+  const templateVars = { urls: getUserURLs(userID), user: users[userID] };
   res.render("urls_index", templateVars);
 });
 

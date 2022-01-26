@@ -45,13 +45,19 @@ const findUserEmail = (email) => {
   return false;
 };
 
-// Redirect from / to URLs page
+// Redirect from / to login/URLs page
 app.get("/", (req, res) => {
+  if (!req.cookies["user_id"]) {
+    res.redirect("/login");
+  }
   res.redirect("/urls");
 });
 
 // Render the front page and the form to shorten new URLs
 app.get("/urls", (req, res) => {
+  if (!req.cookies["user_id"]) {
+    return res.status(403).send("Log in to view shortened URLs");
+  }
   const templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]] };
   res.render("urls_index", templateVars);
 });
@@ -173,7 +179,7 @@ app.post("/login", (req, res) => {
 
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
-  res.redirect("/urls");
+  res.redirect("/");
 });
 
 app.listen(PORT, () => {

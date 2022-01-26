@@ -33,7 +33,7 @@ const generateRandomString = () => {
 const findUserEmail = (email) => {
   for (const user in users) {
     if (email === users[user].email) {
-      return true;
+      return user;
     }
   }
   return false;
@@ -130,7 +130,20 @@ app.get("/login", (req, res) => {
 
 // Store login username in cookies and redirect to urls homepage
 app.post("/login", (req, res) => {
-  res.cookie("username", req.body.username);
+  // If no email or password were entered or email has already been registered send a 400 error
+  if (!req.body.email || !req.body.password) {
+    return res.status(400).send("Enter email and password");
+  }
+  // Check if entered email and password are valid
+  if (!findUserEmail(req.body.email)) {
+    return res.status(403).send("Email not found in user database");
+  }
+  let userID = findUserEmail(req.body.email);
+  if (req.body.password !== users[userID].password) {
+    return res.status(403).send("Incorrect password");
+  }
+  // Set cookie to user ID that matches email and password and redirect to URLs
+  res.cookie("user_id", userID);
   res.redirect("/urls");
 });
 

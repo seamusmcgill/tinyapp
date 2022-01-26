@@ -106,8 +106,11 @@ app.get("/register", (req, res) => {
 // Add a user to the database, create cookie for their ID, redirect to homepage
 app.post("/register", (req, res) => {
   // If no email or password were entered or email has already been registered send a 400 error
-  if (!req.body.email || !req.body.password || findUserEmail(req.body.email)) {
-    return res.sendStatus(400);
+  if (!req.body.email || !req.body.password) {
+    return res.status(400).send("Enter email and password");
+  }
+  if (findUserEmail(req.body.email)) {
+    return res.status(400).send("Email already in user database");
   }
   let userID = generateRandomString();
   users[userID] = {

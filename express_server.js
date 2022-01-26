@@ -119,8 +119,13 @@ app.post("/register", (req, res) => {
     password: req.body.password,
   };
   res.cookie("user_id", userID);
-  console.log(users);
   res.redirect("/urls");
+});
+
+// Render login page
+app.get("/login", (req, res) => {
+  const templateVars = { user: users[req.cookies["user_id"]] };
+  res.render("login", templateVars);
 });
 
 // Store login username in cookies and redirect to urls homepage

@@ -15,6 +15,8 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = {};
+
 const generateRandomString = () => {
   // Create a string with all alphanumeric characters and an empty string
   const characters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -89,6 +91,19 @@ app.get("/u/:shortURL", (req, res) => {
 app.get("/register", (req, res) => {
   const templateVars = { username: req.cookies["username"] };
   res.render("register_user", templateVars);
+});
+
+// Add a user to the database, create cookie for their ID, redirect to homepage
+app.post("/register", (req, res) => {
+  let userID = generateRandomString();
+  users[userID] = {
+    id: userID,
+    email: req.body.email,
+    password: req.body.password,
+  };
+  res.cookie("user_id", userID);
+  console.log(users);
+  res.redirect("/urls");
 });
 
 // Store login username in cookies and redirect to urls homepage

@@ -52,11 +52,17 @@ app.get("/urls", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   const templateVars = { user: users[req.cookies["user_id"]] };
+  if (!templateVars.user) {
+    res.redirect("/login");
+  }
   res.render("urls_new", templateVars);
 });
 
 // On form submission
 app.post("/urls", (req, res) => {
+  if (!req.cookies["user_id"]) {
+    return res.status(403).send("Only logged in users can create a shortened URL.");
+  }
   // Create a random short URL and add it to the URL database then redirect to its shortURL page
   let shortURL = generateRandomString();
   // Correct the input if user doesn't enter http://

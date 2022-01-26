@@ -86,6 +86,10 @@ app.post("/urls", (req, res) => {
 
 // Render the page for the individual shortened URL with its longURL counterpart
 app.get("/urls/:shortURL", (req, res) => {
+  // Don't allow anonymous users to edit shortURLs
+  if (!req.cookies["user_id"]) {
+    res.redirect("/login");
+  }
   const templateVars = { shortURL: req.params.shortURL, longURL : urlDatabase[req.params.shortURL].longURL, user: users[req.cookies["user_id"]] };
   res.render("urls_show", templateVars);
 });
@@ -109,6 +113,10 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 // Redirect the shortURL to the page the longURL refers to
 app.get("/u/:shortURL", (req, res) => {
+  // Send error if invalid shortURL
+  if (!urlDatabase[req.params.shortURL]) {
+    return res.status(404).send("Invalid short URL");
+  }
   const templateVars = { shortURL: req.params.shortURL, longURL : urlDatabase[req.params.shortURL].longURL};
   res.redirect(templateVars.longURL);
 });

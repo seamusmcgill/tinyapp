@@ -29,6 +29,16 @@ const generateRandomString = () => {
   return randomString;
 };
 
+// Helper function to find an email in the users object
+const findUserEmail = (email) => {
+  for (const user in users) {
+    if (email === users[user].email) {
+      return true;
+    }
+  }
+  return false;
+};
+
 // Redirect from / to URLs page
 app.get("/", (req, res) => {
   res.redirect("/urls");
@@ -95,6 +105,10 @@ app.get("/register", (req, res) => {
 
 // Add a user to the database, create cookie for their ID, redirect to homepage
 app.post("/register", (req, res) => {
+  // If no email or password were entered or email has already been registered send a 400 error
+  if (!req.body.email || !req.body.password || findUserEmail(req.body.email)) {
+    return res.sendStatus(400);
+  }
   let userID = generateRandomString();
   users[userID] = {
     id: userID,

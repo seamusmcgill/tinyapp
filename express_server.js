@@ -10,17 +10,8 @@ app.set("view engine", "ejs");
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 
-const urlDatabase = {
-  "b2xVn2": {
-    longURL: "http://www.lighthouselabs.ca",
-    userID: "",
-  },
-  "9sm5xK": {
-    longURL: "http://www.google.com",
-    userID: "",
-  },
-};
-
+// Initialize URL database and users object
+const urlDatabase = {};
 const users = {};
 
 const generateRandomString = () => {
@@ -58,16 +49,19 @@ const getUserURLs = (id) => {
 
 // Redirect from / to login/URLs page
 app.get("/", (req, res) => {
-  if (!req.cookies["user_id"]) {
-    res.redirect("/login");
+  if (!users[req.cookies["user_id"]]) {
+    return res.redirect("/login");
   }
   res.redirect("/urls");
 });
 
+//
+
 // Render the front page and the form to shorten new URLs
 app.get("/urls", (req, res) => {
-  if (!req.cookies["user_id"]) {
-    return res.status(403).send("403 FORDBIDDEN - Log in to view shortened URLs.");
+  // Check if a cookie exists or if the one that does matches a user in the database
+  if (!users[req.cookies["user_id"]]) {
+    return res.status(403).send("403 FORBIDDEN - Log in to view shortened URLs.");
   }
   let userID = req.cookies["user_id"];
   const templateVars = { urls: getUserURLs(userID), user: users[userID] };
@@ -84,7 +78,7 @@ app.get("/urls/new", (req, res) => {
 
 // On form submission
 app.post("/urls", (req, res) => {
-  if (!req.cookies["user_id"]) {
+  if (!users[req.cookies["user_id"]]) {
     return res.status(403).send("403 FORBIDDEN - Only logged in users can create a shortened URL.");
   }
   // Create a random short URL and add it to the URL database then redirect to its shortURL page
@@ -105,7 +99,7 @@ app.post("/urls", (req, res) => {
 // Render the page for the individual shortened URL with its longURL counterpart
 app.get("/urls/:shortURL", (req, res) => {
   // Don't allow anonymous users to access the shortURL page or users to access short URLs that aren't theirs
-  if (!req.cookies["user_id"]) {
+  if (!users[req.cookies["user_id"]]) {
     return res.status(403).send("403 FORBIDDEN - Must be logged in to access short URL page.");
   }
   let userURLs = getUserURLs(req.cookies["user_id"]);
@@ -119,7 +113,7 @@ app.get("/urls/:shortURL", (req, res) => {
 // Send longURL edit information
 app.post("/urls/:shortURL", (req, res) => {
   // Don't allow anonymous users to edit shortURLs or users to edit short URLs that aren't theirs
-  if (!req.cookies["user_id"]) {
+  if (!users[req.cookies["user_id"]]) {
     return res.status(403).send("403 FORBIDDEN - Must be logged in to edit short URLs.");
   }
   let userURLs = getUserURLs(req.cookies["user_id"]);
@@ -139,7 +133,7 @@ app.post("/urls/:shortURL", (req, res) => {
 // Delete shortened URL from homepage
 app.post("/urls/:shortURL/delete", (req, res) => {
   // Don't allow anonymous users to edit shortURLs or users to edit short URLs that aren't theirs
-  if (!req.cookies["user_id"]) {
+  if (!users[req.cookies["user_id"]]) {
     return res.status(403).send("403 FORBIDDEN - Must be logged in to delete short URLs.");
   }
   let userURLs = getUserURLs(req.cookies["user_id"]);

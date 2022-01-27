@@ -14,8 +14,6 @@ app.set("view engine", "ejs");
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 
-const bcrypt = require("bcryptjs");
-
 const { getUserByEmail, generateRandomString, getUserURLs, addNewUser, authenticateUser } = require("./helpers");
 
 // Initialize URL database and users object
@@ -174,6 +172,11 @@ app.get("/u/:shortURL", (req, res) => {
 app.get("/register", (req, res) => {
   const user = users[req.session["user_id"]];
 
+  // Redirect logged in user to URLs page
+  if (user) {
+    res.redirect("/urls");
+  }
+
   const templateVars = { user };
   res.render("register_user", templateVars);
 });
@@ -212,7 +215,7 @@ app.get("/login", (req, res) => {
   if (user) {
     res.redirect("/urls");
   }
-  
+
   const templateVars = { user };
   res.render("login", templateVars);
 });
@@ -221,6 +224,7 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
+
   // If no email or password were entered send a 400 error
   if (!email || !password) {
     return res.status(400).send("400 BAD REQUEST - Enter email and password");

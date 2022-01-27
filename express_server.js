@@ -16,17 +16,33 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 const bcrypt = require("bcryptjs");
 
-const { getUserByEmail, generateRandomString, getUserURLs } = require("./helpers");
+const { getUserByEmail, generateRandomString, getUserURLs, addNewUser } = require("./helpers");
+
+// Helper function to authenticate the user trying to log in
+const authenticateUser = (email, password, database) => {
+
+  const user = getUserByEmail(email, database);
+
+  // Check if the entered password matches the password in the database
+  if (user && bcrypt.compareSync(password, database[user].password)) {
+    return user;
+  }
+
+  return false;
+};
 
 // Initialize URL database and users object
 const urlDatabase = {};
 const users = {};
 
-// Redirect from / to login/URLs page
+// Redirect from / to login/URLs page depending on if user logged in
 app.get("/", (req, res) => {
-  if (!users[req.session["user_id"]]) {
+  const user = users[req.session["user_id"]];
+
+  if (!user) {
     return res.redirect("/login");
   }
+
   res.redirect("/urls");
 });
 
@@ -135,22 +151,28 @@ app.get("/register", (req, res) => {
 
 // Add a user to the database, create cookie for their ID, redirect to homepage
 app.post("/register", (req, res) => {
+
+  const email = req.body.email;
+  const password = req.body.password;
+
   // If no email or password were entered or email has already been registered send a 400 error
-  if (!req.body.email || !req.body.password) {
+  if (!email || !password) {
     return res.status(400).send("400 BAD REQUEST - Enter email and password.");
   }
-  if (getUserByEmail(req.body.email, users)) {
-    return res.status(400).send("400 BAD REQUEST - Email already in user database.");
+
+  // Check if the user is in the database before adding them
+  const user = getUserByEmail(email, users);
+
+  if (!user) {
+    // Add new user to database and create their session cookie
+    const userID = addNewUser(email, password, users);
+  
+    req.session["user_id"] = userID;
+    res.redirect("/urls");
   }
-  let userID = generateRandomString();
-  let hashedPassword = bcrypt.hashSync(req.body.password, 10);
-  users[userID] = {
-    id: userID,
-    email: req.body.email,
-    password: hashedPassword,
-  };
-  req.session["user_id"] = userID;
-  res.redirect("/urls");
+  // Return error if in database
+  return res.status(400).send("400 BAD REQUEST - Email already in user database.");
+
 });
 
 // Render login page
@@ -161,21 +183,25 @@ app.get("/login", (req, res) => {
 
 // Check login information, update cookie and redirect to urls homepage
 app.post("/login", (req, res) => {
-  // If no email or password were entered or email has already been registered send a 400 error
-  if (!req.body.email || !req.body.password) {
+  const email = req.body.email;
+  const password = req.body.password;
+  // If no email or password were entered send a 400 error
+  if (!email || !password) {
     return res.status(400).send("400 BAD REQUEST - Enter email and password");
   }
-  // Check if entered email and password are valid
-  if (!getUserByEmail(req.body.email, users)) {
-    return res.status(403).send("403 FORBIDDEN - Email not found in user database.");
+
+  // Check if the user has entered valid credentials
+  const user = authenticateUser(email, password, users);
+
+  if (user) {
+    // Set cookie to user ID that matches email and password and redirect to URLs
+    req.session["user_id"] = users[user].id;
+    res.redirect("/urls");
   }
-  let userID = getUserByEmail(req.body.email, users);
-  if (!bcrypt.compareSync(req.body.password, users[userID].password)) {
-    return res.status(403).send("403 FORBIDDEN - Incorrect password.");
-  }
-  // Set cookie to user ID that matches email and password and redirect to URLs
-  req.session["user_id"] = userID;
-  res.redirect("/urls");
+
+  // Return an error if any information is invalid
+  return res.status(401).send("401 UNAUTHORIZED - Invalid login credentials.");
+
 });
 
 app.post("/logout", (req, res) => {

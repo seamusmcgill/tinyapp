@@ -12,6 +12,7 @@
     </div>
     <!-- TO FIX: MAKE THESE COLLAPSIBLE -->
     <% if (!user) { %>
+    <div class="nav navbar-nav navbar-right">
       <form class="form-inline form-inline-sm" style="align-self:flex-end" action="/login" method="GET">
         <div class="form-group mb-2 mr-2">
           <button type="submit" class="btn btn-outline-light">Login</button>
@@ -22,13 +23,16 @@
           <button type="submit" class="btn btn-primary">Register</button>
         </div>
       </form>
+    </div>
     <% } else { %>
+    <div class="nav navbar-nav navbar-right"> 
       <form class="form-inline form-inline-sm" action="/logout" method="POST">
         <div class="form-group mb-2">
           <label class="form-check-label" style="padding-right:10px; color:white">Logged in as <%= user.email %>!</label>
           <button type="submit" class="btn btn-outline-light">Log Out</button>
         </div>
       </form>
+    </div>
     <% } %>
   </nav>
 

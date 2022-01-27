@@ -16,20 +16,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 const bcrypt = require("bcryptjs");
 
-const { getUserByEmail, generateRandomString, getUserURLs, addNewUser } = require("./helpers");
-
-// Helper function to authenticate the user trying to log in
-const authenticateUser = (email, password, database) => {
-
-  const user = getUserByEmail(email, database);
-
-  // Check if the entered password matches the password in the database
-  if (user && bcrypt.compareSync(password, database[user].password)) {
-    return user;
-  }
-
-  return false;
-};
+const { getUserByEmail, generateRandomString, getUserURLs, addNewUser, authenticateUser } = require("./helpers");
 
 // Initialize URL database and users object
 const urlDatabase = {};

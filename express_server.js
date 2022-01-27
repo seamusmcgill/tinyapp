@@ -14,6 +14,9 @@ app.set("view engine", "ejs");
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 
+const methodOverride = require("method-override");
+app.use(methodOverride("_method"));
+
 const { getUserByEmail, generateRandomString, getUserURLs, addNewUser, authenticateUser } = require("./helpers");
 
 // Initialize URL database and users object
@@ -39,7 +42,8 @@ app.get("/urls", (req, res) => {
     return res.status(403).send("403 FORBIDDEN - Log in to view shortened URLs.");
   }
 
-  const templateVars = { urls: getUserURLs(user.id, urlDatabase), user };
+  const urls = getUserURLs(user.id, urlDatabase);
+  const templateVars = { urls, user };
   res.render("urls_index", templateVars);
 });
 
@@ -104,8 +108,8 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-// Send longURL edit information
-app.post("/urls/:shortURL", (req, res) => {
+// Update the long URL for an associated short URL
+app.put("/urls/:shortURL", (req, res) => {
   const user = users[req.session["user_id"]];
   // Don't allow anonymous users to edit shortURLs
   if (!user) {
@@ -133,7 +137,7 @@ app.post("/urls/:shortURL", (req, res) => {
 });
 
 // Delete shortened URL from homepage
-app.post("/urls/:shortURL/delete", (req, res) => {
+app.delete("/urls/:shortURL", (req, res) => {
   const user = users[req.session["user_id"]];
 
   // Don't allow anonymous users to delete shortURLs
@@ -200,10 +204,10 @@ app.post("/register", (req, res) => {
     const userID = addNewUser(email, password, users);
   
     req.session["user_id"] = userID;
-    res.redirect("/urls");
+    return res.redirect("/urls");
   }
   // Return error if in database
-  return res.status(400).send("400 BAD REQUEST - Email already in user database.");
+  res.status(400).send("400 BAD REQUEST - Email already in user database.");
 
 });
 
@@ -235,12 +239,12 @@ app.post("/login", (req, res) => {
 
   if (user) {
     // Set cookie to user ID that matches email and password and redirect to URLs
-    req.session["user_id"] = users[user].id;
-    res.redirect("/urls");
+    req.session["user_id"] = user;
+    return res.redirect("/urls");
   }
 
   // Return an error if any information is invalid
-  return res.status(401).send("401 UNAUTHORIZED - Invalid login credentials.");
+  res.status(401).send("401 UNAUTHORIZED - Invalid login credentials.");
 
 });
 

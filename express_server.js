@@ -1,8 +1,12 @@
 const express = require("express");
 const { redirect } = require("express/lib/response");
 const app = express();
-const cookieParser = require('cookie-parser');
-app.use(cookieParser());
+const cookieSession = require("cookie-session");
+app.use(cookieSession({
+  name: "session",
+  keys: ["key1", "key2"],
+  secret: "wLeHbL"
+}));
 const PORT = 8080; // default port 8080
 
 app.set("view engine", "ejs");
@@ -51,7 +55,7 @@ const getUserURLs = (id) => {
 
 // Redirect from / to login/URLs page
 app.get("/", (req, res) => {
-  if (!users[req.cookies["user_id"]]) {
+  if (!users[req.session["user_id"]]) {
     return res.redirect("/login");
   }
   res.redirect("/urls");
@@ -62,16 +66,16 @@ app.get("/", (req, res) => {
 // Render the front page and the form to shorten new URLs
 app.get("/urls", (req, res) => {
   // Check if a cookie exists or if the one that does matches a user in the database
-  if (!users[req.cookies["user_id"]]) {
+  if (!users[req.session["user_id"]]) {
     return res.status(403).send("403 FORBIDDEN - Log in to view shortened URLs.");
   }
-  let userID = req.cookies["user_id"];
+  let userID = req.session["user_id"];
   const templateVars = { urls: getUserURLs(userID), user: users[userID] };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  const templateVars = { user: users[req.cookies["user_id"]] };
+  const templateVars = { user: users[req.session["user_id"]] };
   if (!templateVars.user) {
     res.redirect("/login");
   }
@@ -80,7 +84,7 @@ app.get("/urls/new", (req, res) => {
 
 // On form submission
 app.post("/urls", (req, res) => {
-  if (!users[req.cookies["user_id"]]) {
+  if (!users[req.session["user_id"]]) {
     return res.status(403).send("403 FORBIDDEN - Only logged in users can create a shortened URL.");
   }
   // Create a random short URL and add it to the URL database then redirect to its shortURL page
@@ -92,7 +96,7 @@ app.post("/urls", (req, res) => {
   }
   urlDatabase[shortURL] = {
     longURL,
-    userID: req.cookies["user_id"],
+    userID: req.session["user_id"],
   };
   console.log(urlDatabase);
   res.redirect(`/urls/${shortURL}`);
@@ -101,24 +105,24 @@ app.post("/urls", (req, res) => {
 // Render the page for the individual shortened URL with its longURL counterpart
 app.get("/urls/:shortURL", (req, res) => {
   // Don't allow anonymous users to access the shortURL page or users to access short URLs that aren't theirs
-  if (!users[req.cookies["user_id"]]) {
+  if (!users[req.session["user_id"]]) {
     return res.status(403).send("403 FORBIDDEN - Must be logged in to access short URL page.");
   }
-  let userURLs = getUserURLs(req.cookies["user_id"]);
+  let userURLs = getUserURLs(req.session["user_id"]);
   if (!Object.keys(userURLs).includes(req.params.shortURL)) {
     return res.status(403).send("403 FORBIDDEN - You can only edit short URLs that you have made.");
   }
-  const templateVars = { shortURL: req.params.shortURL, longURL : urlDatabase[req.params.shortURL].longURL, user: users[req.cookies["user_id"]] };
+  const templateVars = { shortURL: req.params.shortURL, longURL : urlDatabase[req.params.shortURL].longURL, user: users[req.session["user_id"]] };
   res.render("urls_show", templateVars);
 });
 
 // Send longURL edit information
 app.post("/urls/:shortURL", (req, res) => {
   // Don't allow anonymous users to edit shortURLs or users to edit short URLs that aren't theirs
-  if (!users[req.cookies["user_id"]]) {
+  if (!users[req.session["user_id"]]) {
     return res.status(403).send("403 FORBIDDEN - Must be logged in to edit short URLs.");
   }
-  let userURLs = getUserURLs(req.cookies["user_id"]);
+  let userURLs = getUserURLs(req.session["user_id"]);
   if (!Object.keys(userURLs).includes(req.params.shortURL)) {
     return res.status(403).send("403 FORBIDDEN - You can only edit short URLs that you have made.");
   }
@@ -135,10 +139,10 @@ app.post("/urls/:shortURL", (req, res) => {
 // Delete shortened URL from homepage
 app.post("/urls/:shortURL/delete", (req, res) => {
   // Don't allow anonymous users to edit shortURLs or users to edit short URLs that aren't theirs
-  if (!users[req.cookies["user_id"]]) {
+  if (!users[req.session["user_id"]]) {
     return res.status(403).send("403 FORBIDDEN - Must be logged in to delete short URLs.");
   }
-  let userURLs = getUserURLs(req.cookies["user_id"]);
+  let userURLs = getUserURLs(req.session["user_id"]);
   if (!Object.keys(userURLs).includes(req.params.shortURL)) {
     return res.status(403).send("403 FORBIDDEN - You can only delete short URLs that you have made.");
   }
@@ -158,7 +162,7 @@ app.get("/u/:shortURL", (req, res) => {
 
 // Render the registration page
 app.get("/register", (req, res) => {
-  const templateVars = { user: users[req.cookies["user_id"]] };
+  const templateVars = { user: users[req.session["user_id"]] };
   res.render("register_user", templateVars);
 });
 
@@ -178,13 +182,13 @@ app.post("/register", (req, res) => {
     email: req.body.email,
     password: hashedPassword,
   };
-  res.cookie("user_id", userID);
+  req.session["user_id"] = userID;
   res.redirect("/urls");
 });
 
 // Render login page
 app.get("/login", (req, res) => {
-  const templateVars = { user: users[req.cookies["user_id"]] };
+  const templateVars = { user: users[req.session["user_id"]] };
   res.render("login", templateVars);
 });
 
@@ -203,12 +207,12 @@ app.post("/login", (req, res) => {
     return res.status(403).send("403 FORBIDDEN - Incorrect password.");
   }
   // Set cookie to user ID that matches email and password and redirect to URLs
-  res.cookie("user_id", userID);
+  req.session["user_id"] = userID;
   res.redirect("/urls");
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  req.session["user_id"] = null;
   res.redirect("/");
 });
 

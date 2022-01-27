@@ -16,6 +16,8 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 const bcrypt = require("bcryptjs");
 
+const { getUserByEmail } = require("./helpers");
+
 // Initialize URL database and users object
 const urlDatabase = {};
 const users = {};
@@ -30,16 +32,6 @@ const generateRandomString = () => {
     randomString += characters[randomNumber];
   }
   return randomString;
-};
-
-// Helper function to find an email in the users object
-const getUserByEmail = (email, database) => {
-  for (const user in database) {
-    if (email === database[user].email) {
-      return user;
-    }
-  }
-  return false;
 };
 
 // Return an object containing the URLs from the database that belong to the user

@@ -1,6 +1,6 @@
 const { assert } = require('chai');
 
-const { getUserByEmail } = require('../helpers.js');
+const { getUserByEmail, generateRandomString } = require('../helpers.js');
 
 const testUsers = {
   "userRandomID": {
@@ -26,5 +26,18 @@ describe('getUserByEmail', function() {
   it("should return undefined for an invalid email", () => {
     const user = getUserByEmail("hello@world.com", testUsers);
     assert.equal(user, undefined);
+  });
+});
+
+describe("generateRandomString", () => {
+  it('should return a different random value every time', function() {
+    const randomString1 = generateRandomString();
+    const randomString2 = generateRandomString();
+    assert.notEqual(randomString1, randomString2);
+  });
+
+  it("should return a string of six characters", () => {
+    const randomString = generateRandomString();
+    assert.equal(randomString.length, 6);
   });
 });

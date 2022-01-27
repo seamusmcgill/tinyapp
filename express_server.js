@@ -104,7 +104,7 @@ app.post("/urls", (req, res) => {
 
 // Render the page for the individual shortened URL with its longURL counterpart
 app.get("/urls/:shortURL", (req, res) => {
-  // Don't allow anonymous users to edit shortURLs or users to access short URLs that aren't theirs
+  // Don't allow anonymous users to access the shortURL page or users to access short URLs that aren't theirs
   if (!req.cookies["user_id"]) {
     return res.status(403).send("403 FORBIDDEN - Must be logged in to access short URL page.");
   }
@@ -116,7 +116,16 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+// Send longURL edit information
 app.post("/urls/:shortURL", (req, res) => {
+  // Don't allow anonymous users to edit shortURLs or users to edit short URLs that aren't theirs
+  if (!req.cookies["user_id"]) {
+    return res.status(403).send("403 FORBIDDEN - Must be logged in to edit short URLs.");
+  }
+  let userURLs = getUserURLs(req.cookies["user_id"]);
+  if (!Object.keys(userURLs).includes(req.params.shortURL)) {
+    return res.status(403).send("403 FORBIDDEN - You can only edit short URLs that you have made.");
+  }
   // Correct the input if user doesn't enter http://
   let newLongURL = req.body.updatedLongURL;
   if (!newLongURL.includes("://")) {
@@ -129,6 +138,14 @@ app.post("/urls/:shortURL", (req, res) => {
 
 // Delete shortened URL from homepage
 app.post("/urls/:shortURL/delete", (req, res) => {
+  // Don't allow anonymous users to edit shortURLs or users to edit short URLs that aren't theirs
+  if (!req.cookies["user_id"]) {
+    return res.status(403).send("403 FORBIDDEN - Must be logged in to delete short URLs.");
+  }
+  let userURLs = getUserURLs(req.cookies["user_id"]);
+  if (!Object.keys(userURLs).includes(req.params.shortURL)) {
+    return res.status(403).send("403 FORBIDDEN - You can only delete short URLs that you have made.");
+  }
   delete urlDatabase[req.params.shortURL];
   res.redirect("/urls");
 });

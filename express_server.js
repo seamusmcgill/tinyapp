@@ -10,6 +10,8 @@ app.set("view engine", "ejs");
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 
+const bcrypt = require("bcryptjs");
+
 // Initialize URL database and users object
 const urlDatabase = {};
 const users = {};
@@ -170,10 +172,11 @@ app.post("/register", (req, res) => {
     return res.status(400).send("400 BAD REQUEST - Email already in user database.");
   }
   let userID = generateRandomString();
+  let hashedPassword = bcrypt.hashSync(req.body.password, 10);
   users[userID] = {
     id: userID,
     email: req.body.email,
-    password: req.body.password,
+    password: hashedPassword,
   };
   res.cookie("user_id", userID);
   res.redirect("/urls");
@@ -196,7 +199,7 @@ app.post("/login", (req, res) => {
     return res.status(403).send("403 FORBIDDEN - Email not found in user database.");
   }
   let userID = findUserEmail(req.body.email);
-  if (req.body.password !== users[userID].password) {
+  if (!bcrypt.compareSync(req.body.password, users[userID].password)) {
     return res.status(403).send("403 FORBIDDEN - Incorrect password.");
   }
   // Set cookie to user ID that matches email and password and redirect to URLs

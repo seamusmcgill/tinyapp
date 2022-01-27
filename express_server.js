@@ -35,104 +35,146 @@ app.get("/", (req, res) => {
 
 // Render the front page and the form to shorten new URLs
 app.get("/urls", (req, res) => {
-  // Check if a cookie exists or if the one that does matches a user in the database
-  if (!users[req.session["user_id"]]) {
+  const user = users[req.session["user_id"]];
+  // Only allow logged in users to access the URLs page
+  if (!user) {
     return res.status(403).send("403 FORBIDDEN - Log in to view shortened URLs.");
   }
-  let userID = req.session["user_id"];
-  const templateVars = { urls: getUserURLs(userID, urlDatabase), user: users[userID] };
+
+  const templateVars = { urls: getUserURLs(user.id, urlDatabase), user };
   res.render("urls_index", templateVars);
 });
 
+// Render the page to create a new short URL
 app.get("/urls/new", (req, res) => {
-  const templateVars = { user: users[req.session["user_id"]] };
-  if (!templateVars.user) {
+  const user = users[req.session["user_id"]];
+  // Redirect anonymous users to the login page
+  if (!user) {
     res.redirect("/login");
   }
+
+  const templateVars = { user};
   res.render("urls_new", templateVars);
 });
 
 // On form submission
 app.post("/urls", (req, res) => {
-  if (!users[req.session["user_id"]]) {
+  const user = users[req.session["user_id"]];
+  // Prevent anonymous users from sending post requests for new URLs
+  if (!user) {
     return res.status(403).send("403 FORBIDDEN - Only logged in users can create a shortened URL.");
   }
-  // Create a random short URL and add it to the URL database then redirect to its shortURL page
-  let shortURL = generateRandomString();
+  
   // Correct the input if user doesn't enter http://
   let longURL = req.body.longURL;
   if (!longURL.includes("://")) {
     longURL = `http://${longURL}`;
   }
+
+  // Add a randomized short URL to the URL database then redirect to its shortURL page
+  let shortURL = generateRandomString();
   urlDatabase[shortURL] = {
     longURL,
-    userID: req.session["user_id"],
+    userID: user.id,
   };
-  console.log(urlDatabase);
+
   res.redirect(`/urls/${shortURL}`);
 });
 
 // Render the page for the individual shortened URL with its longURL counterpart
 app.get("/urls/:shortURL", (req, res) => {
+  const user = users[req.session["user_id"]];
   // Don't allow anonymous users to access the shortURL page or users to access short URLs that aren't theirs
-  if (!users[req.session["user_id"]]) {
+  if (!user) {
     return res.status(403).send("403 FORBIDDEN - Must be logged in to access short URL page.");
   }
-  let userURLs = getUserURLs(req.session["user_id"], urlDatabase);
-  if (!Object.keys(userURLs).includes(req.params.shortURL)) {
+
+  const userURLs = getUserURLs(user.id, urlDatabase);
+  const shortURL = req.params.shortURL;
+
+  // Check if short URL exists
+  if (!urlDatabase[shortURL]) {
+    return res.status(400).send("400 BAD REQUEST - Short URL does not exist.");
+  }
+
+  // Ensure the logged in user has access to the shortURL
+  if (!Object.keys(userURLs).includes(shortURL)) {
     return res.status(403).send("403 FORBIDDEN - You can only edit short URLs that you have made.");
   }
-  const templateVars = { shortURL: req.params.shortURL, longURL : urlDatabase[req.params.shortURL].longURL, user: users[req.session["user_id"]] };
+
+  const templateVars = { shortURL, longURL : urlDatabase[shortURL].longURL, user };
   res.render("urls_show", templateVars);
 });
 
 // Send longURL edit information
 app.post("/urls/:shortURL", (req, res) => {
-  // Don't allow anonymous users to edit shortURLs or users to edit short URLs that aren't theirs
-  if (!users[req.session["user_id"]]) {
+  const user = users[req.session["user_id"]];
+  // Don't allow anonymous users to edit shortURLs
+  if (!user) {
     return res.status(403).send("403 FORBIDDEN - Must be logged in to edit short URLs.");
   }
-  let userURLs = getUserURLs(req.session["user_id"], urlDatabase);
-  if (!Object.keys(userURLs).includes(req.params.shortURL)) {
+
+  const userURLs = getUserURLs(user.id, urlDatabase);
+  const shortURL = req.params.shortURL;
+
+  // Ensure the logged in user has access to the shortURL
+  if (!Object.keys(userURLs).includes(shortURL)) {
     return res.status(403).send("403 FORBIDDEN - You can only edit short URLs that you have made.");
   }
+
   // Correct the input if user doesn't enter http://
   let newLongURL = req.body.updatedLongURL;
   if (!newLongURL.includes("://")) {
     newLongURL = `http://${newLongURL}`;
   }
+
   // Update the database with new lnog URL and redirect to URLs page
-  urlDatabase[req.params.shortURL].longURL = newLongURL;
+  urlDatabase[shortURL].longURL = newLongURL;
+
   res.redirect("/urls");
 });
 
 // Delete shortened URL from homepage
 app.post("/urls/:shortURL/delete", (req, res) => {
-  // Don't allow anonymous users to edit shortURLs or users to edit short URLs that aren't theirs
-  if (!users[req.session["user_id"]]) {
+  const user = users[req.session["user_id"]];
+
+  // Don't allow anonymous users to delete shortURLs
+  if (!user) {
     return res.status(403).send("403 FORBIDDEN - Must be logged in to delete short URLs.");
   }
-  let userURLs = getUserURLs(req.session["user_id"], urlDatabase);
-  if (!Object.keys(userURLs).includes(req.params.shortURL)) {
+
+  const userURLs = getUserURLs(user.id, urlDatabase);
+  const shortURL = req.params.shortURL;
+
+  // Ensure the logged in user has access to the shortURL
+  if (!Object.keys(userURLs).includes(shortURL)) {
     return res.status(403).send("403 FORBIDDEN - You can only delete short URLs that you have made.");
   }
+
+  // Delete the URL from database and redirect to the URLs page
   delete urlDatabase[req.params.shortURL];
   res.redirect("/urls");
 });
 
 // Redirect the shortURL to the page the longURL refers to
 app.get("/u/:shortURL", (req, res) => {
+  const shortURL = req.params.shortURL;
+
   // Send error if invalid shortURL
-  if (!urlDatabase[req.params.shortURL]) {
+  if (!urlDatabase[shortURL]) {
     return res.status(404).send("404 NOT FOUND - Invalid short URL");
   }
-  const templateVars = { shortURL: req.params.shortURL, longURL : urlDatabase[req.params.shortURL].longURL};
-  res.redirect(templateVars.longURL);
+
+  // Redirect to the longURL page
+  const longURL = urlDatabase[shortURL].longURL;
+  res.redirect(longURL);
 });
 
 // Render the registration page
 app.get("/register", (req, res) => {
-  const templateVars = { user: users[req.session["user_id"]] };
+  const user = users[req.session["user_id"]];
+
+  const templateVars = { user };
   res.render("register_user", templateVars);
 });
 
@@ -164,7 +206,14 @@ app.post("/register", (req, res) => {
 
 // Render login page
 app.get("/login", (req, res) => {
-  const templateVars = { user: users[req.session["user_id"]] };
+  const user = users[req.session["user_id"]];
+
+  // Redirect logged in user to URLs page
+  if (user) {
+    res.redirect("/urls");
+  }
+  
+  const templateVars = { user };
   res.render("login", templateVars);
 });
 

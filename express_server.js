@@ -4,7 +4,7 @@ const app = express();
 const cookieSession = require("cookie-session");
 app.use(cookieSession({
   name: "session",
-  keys: ["key1", "key2"],
+  keys: ["8169d4b6-3344-4722-88fb-6665251da559", "d255d683-bc02-44ff-b7bd-af7728b7f437"],
   secret: "wLeHbL"
 }));
 const PORT = 8080; // default port 8080
@@ -33,9 +33,9 @@ const generateRandomString = () => {
 };
 
 // Helper function to find an email in the users object
-const findUserEmail = (email) => {
-  for (const user in users) {
-    if (email === users[user].email) {
+const getUserByEmail = (email, database) => {
+  for (const user in database) {
+    if (email === database[user].email) {
       return user;
     }
   }
@@ -172,7 +172,7 @@ app.post("/register", (req, res) => {
   if (!req.body.email || !req.body.password) {
     return res.status(400).send("400 BAD REQUEST - Enter email and password.");
   }
-  if (findUserEmail(req.body.email)) {
+  if (getUserByEmail(req.body.email, users)) {
     return res.status(400).send("400 BAD REQUEST - Email already in user database.");
   }
   let userID = generateRandomString();
@@ -199,10 +199,10 @@ app.post("/login", (req, res) => {
     return res.status(400).send("400 BAD REQUEST - Enter email and password");
   }
   // Check if entered email and password are valid
-  if (!findUserEmail(req.body.email)) {
+  if (!getUserByEmail(req.body.email, users)) {
     return res.status(403).send("403 FORBIDDEN - Email not found in user database.");
   }
-  let userID = findUserEmail(req.body.email);
+  let userID = getUserByEmail(req.body.email, users);
   if (!bcrypt.compareSync(req.body.password, users[userID].password)) {
     return res.status(403).send("403 FORBIDDEN - Incorrect password.");
   }

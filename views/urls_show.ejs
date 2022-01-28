@@ -14,6 +14,18 @@
       <div class="card-body">
         <h5 class="card-title">TinyURL for: <%= longURL %></h5>
         <p class="card-text">Short URL: <a href="/u/<%= shortURL %>"><%= shortURL %></a></p>
+        <p class="card-text">URL Views: <b><%= views %></b></p>
+        <p class="card-text">Unique Visitors: <b><%= visitors %></b></p>
+      </div>
+      <div class="card text-center mb-4" style="width: 35rem; margin:auto">
+        <div class="card-header">
+          <b>Visit Log</b>
+        </div>
+        <ul class="list-group list-group-flush">
+          <% for (let visit of visits) { %>
+            <p class="list-group-item"><%= visit %></b></p>
+          <% } %>
+        </ul>
       </div>
     <div class="card-footer text-muted">
       <div class="card-body">

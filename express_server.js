@@ -19,9 +19,10 @@ app.use(methodOverride("_method"));
 
 const { getUserByEmail, generateRandomString, getUserURLs, addNewUser, authenticateUser } = require("./helpers");
 
-// Initialize URL database and users object
+// Initialize URL database, users object and visit log
 const urlDatabase = {};
 const users = {};
+const visitLog = {};
 
 // Redirect from / to login/URLs page depending on if user logged in
 app.get("/", (req, res) => {
@@ -80,6 +81,9 @@ app.post("/urls", (req, res) => {
     userID: user.id,
   };
 
+  // Initialize empty array for visit log to track who uses the shortURL
+  visitLog[shortURL] = [];
+
   res.redirect(`/urls/${shortURL}`);
 });
 
@@ -104,7 +108,11 @@ app.get("/urls/:shortURL", (req, res) => {
     return res.status(403).send("403 FORBIDDEN - You can only edit short URLs that you have made.");
   }
 
-  const templateVars = { shortURL, longURL : urlDatabase[shortURL].longURL, user };
+  const views = req.session[`${shortURL}views`];
+  const visitors = req.session[`${shortURL}visitors`];
+  const visits = visitLog[shortURL];
+
+  const templateVars = { shortURL, longURL : urlDatabase[shortURL].longURL, user, views, visitors, visits };
   res.render("urls_show", templateVars);
 });
 
@@ -165,6 +173,28 @@ app.get("/u/:shortURL", (req, res) => {
   // Send error if invalid shortURL
   if (!urlDatabase[shortURL]) {
     return res.status(404).send("404 NOT FOUND - Invalid short URL");
+  }
+
+  // Create a variable for the visit time and store it in a string
+  let visitTime = new Date();
+  visitTime = `${visitTime.getFullYear()}-${(visitTime.getMonth()) + 1}-${visitTime.getDay()} ${visitTime.getHours()}:${visitTime.getMinutes()}:${visitTime.getSeconds()}`;
+  
+  // Check if a visitor ID has been created - if not generate a random string
+  if (!req.session["visitor_id"]) {
+    req.session["visitor_id"] = generateRandomString();
+  }
+
+  let visitorID = req.session["visitor_id"];
+  
+  // Add the visit to the log
+  visitLog[shortURL].push(`Visitor ${visitorID} visited the shortURL at ${visitTime}`);
+  
+  // Update the view count and unique visitors for the short URL
+  if (req.session[`${shortURL}views`]) {
+    req.session[`${shortURL}views`]++;
+  } else {
+    req.session[`${shortURL}views`] = 1;
+    req.session[`${shortURL}visitors`] = (req.session[`${shortURL}visitors`] || 0) + 1;
   }
 
   // Redirect to the longURL page
